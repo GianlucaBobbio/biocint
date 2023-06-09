@@ -2573,10 +2573,10 @@ button:disabled,
   display: -webkit-flex;
   display: -ms-flex;
   display: flex;
-  -moz-flex-direction: row-reverse;
-  -webkit-flex-direction: row-reverse;
-  -ms-flex-direction: row-reverse;
-  flex-direction: row-reverse;
+  -moz-flex-direction: row;
+  -webkit-flex-direction: row;
+  -ms-flex-direction: row;
+  flex-direction: row;
   min-height: 100vh;
 }
 
@@ -2591,6 +2591,7 @@ button:disabled,
   -ms-flex-shrink: 1;
   flex-shrink: 1;
   width: 100%;
+  box-shadow: 0 0 20px -4px rgba(0, 0, 0, 0.5);
 }
 #main > .inner {
   padding: 0 6em 0.1em 6em;
