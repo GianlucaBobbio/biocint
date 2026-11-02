@@ -717,6 +717,20 @@
       .pub-card:hover {
         border-color: var(--purple);
       }
+      .pub-card.skeleton {
+        min-height: 420px;
+        background: linear-gradient(90deg, #eef1ee 25%, #f8faf8 50%, #eef1ee 75%);
+        background-size: 200% 100%;
+        animation: skeleton 1.2s linear infinite;
+      }
+      @keyframes skeleton {
+        to {
+          background-position: -200% 0;
+        }
+      }
+      .pub-media img {
+        transition: opacity 0.15s;
+      }
       .pub-media {
         aspect-ratio: 16/10;
         border-bottom: 1.5px solid rgba(14, 26, 20, 0.12);
@@ -2023,35 +2037,91 @@
         return Object.values(productsMap);
       }
 
+      const CATALOG_CACHE_KEY = 'biocint_catalog_csv';
+      const IMG_PLACEHOLDER = 'assets/logo-biocint.svg';
+      let catalogReady = false;
+      let currentCat = 'all';
+      let renderedCsv = null;
+
+      function applyCatalogCsv(text) {
+        if (!/nombre/i.test(text.split(/\r?\n/, 1)[0])) return false; // not the sheet (e.g. a Google error page)
+        const items = parseCSV(text);
+        if (!items.length) return false;
+        MARKET_ITEMS.length = 0;
+        MARKET_ITEMS.push(...items);
+        renderedCsv = text;
+        catalogReady = true;
+        renderMarket(currentCat);
+        return true;
+      }
+
+      function renderMarketSkeleton() {
+        document.getElementById('market-grid').innerHTML =
+          '<div class="pub-card skeleton"></div>'.repeat(4);
+      }
+
+      // Sheet first (last good copy from localStorage, then fresh); the hardcoded list only if the sheet fails
       async function loadSpreadsheetData() {
-        if (!SPREADSHEET_CSV_URL) return;
+        let cached = null;
         try {
-          const cacheBustUrl =
-            SPREADSHEET_CSV_URL +
-            (SPREADSHEET_CSV_URL.includes('?') ? '&' : '?') +
-            '_t=' +
-            Date.now();
-          const res = await fetch(cacheBustUrl, { cache: 'no-store' });
-          if (res.ok) {
-            const text = await res.text();
-            const items = parseCSV(text);
-            if (items && items.length > 0) {
-              MARKET_ITEMS.length = 0;
-              MARKET_ITEMS.push(...items);
-              const activeChip = document.querySelector(
-                '.cat-tabs .chip.active',
-              );
-              const currentCat = activeChip
-                ? (activeChip.getAttribute('onclick') || '').match(
-                    /'([^']+)'/,
-                  )?.[1]
-                : 'all';
-              renderMarket(currentCat || 'all');
+          cached = localStorage.getItem(CATALOG_CACHE_KEY);
+        } catch (e) {}
+        if (!(cached && applyCatalogCsv(cached))) renderMarketSkeleton();
+
+        if (SPREADSHEET_CSV_URL) {
+          try {
+            const cacheBustUrl =
+              SPREADSHEET_CSV_URL +
+              (SPREADSHEET_CSV_URL.includes('?') ? '&' : '?') +
+              '_t=' +
+              Date.now();
+            const signal = AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined;
+            const res = await fetch(cacheBustUrl, { cache: 'no-store', signal });
+            if (res.ok) {
+              const text = await res.text();
+              if (text !== renderedCsv && applyCatalogCsv(text)) {
+                try {
+                  localStorage.setItem(CATALOG_CACHE_KEY, text);
+                } catch (e) {}
+              }
             }
+          } catch (e) {
+            console.log('Fondo de reserva activo para catálogo.', e);
           }
-        } catch (e) {
-          console.log('Fondo de reserva activo para catálogo.', e);
         }
+        if (!catalogReady) {
+          catalogReady = true;
+          renderMarket(currentCat);
+        }
+      }
+
+      function imgFallback(el) {
+        el.onerror = null;
+        el.src = IMG_PLACEHOLDER;
+        el.style.objectFit = 'contain';
+        el.style.padding = '18%';
+      }
+
+      // Keep the old photo dimmed until the new one has loaded, so it never shows next to the new price
+      function swapImg(el, src) {
+        if (el.getAttribute('src') === src) {
+          el.dataset.want = src;
+          el.style.opacity = '';
+          return;
+        }
+        if (el.dataset.want === src) return;
+        el.dataset.want = src;
+        el.style.opacity = '0.35';
+        const pre = new Image();
+        pre.onload = pre.onerror = () => {
+          if (el.dataset.want !== src) return;
+          el.style.objectFit = 'cover';
+          el.style.padding = '';
+          el.onerror = () => imgFallback(el);
+          el.src = src;
+          el.style.opacity = '';
+        };
+        pre.src = src;
       }
 
       let cart = {};
@@ -2133,7 +2203,7 @@
         const noteEl = card.querySelector('.pub-note');
         const waBtn = card.querySelector('.btn-wa');
 
-        if (imgEl) imgEl.src = formatImgUrl(match.img);
+        if (imgEl) swapImg(imgEl, formatImgUrl(match.img));
         if (priceEl) priceEl.textContent = match.rawPrice;
         if (noteEl) {
           if (match.note) {
@@ -2206,7 +2276,7 @@
             return `
         <article class="pub-card" data-product-card="${p.id}">
           <div class="pub-media">
-            <img src="${formatImgUrl(currentMatch.img)}" alt="${p.name}" loading="lazy" style="width:100%;height:100%;object-fit:cover">
+            <img src="${formatImgUrl(currentMatch.img)}" alt="${p.name}" loading="lazy" onerror="imgFallback(this)" style="width:100%;height:100%;object-fit:cover">
             <span class="pub-tag">${p.tag}</span>
           </div>
           <div class="pub-body">
@@ -2244,7 +2314,8 @@
           .querySelectorAll('.cat-tabs .chip')
           .forEach((c) => c.classList.remove('active'));
         btn.classList.add('active');
-        renderMarket(cat);
+        currentCat = cat;
+        if (catalogReady) renderMarket(cat);
       }
 
       function addToCart(productId) {
@@ -2374,7 +2445,6 @@
       if (window.BIOCINT && window.BIOCINT.mount) {
         window.BIOCINT.mount({});
       }
-      renderMarket('all');
       loadSpreadsheetData();
     </script>
   </body>
