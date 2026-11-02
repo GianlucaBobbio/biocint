@@ -1668,8 +1668,8 @@
                 attr_2: '1 Color',
                 attr_3: '50 Rollos',
               },
-              price: 300000,
-              rawPrice: '$300.000 + IVA',
+              price: 0,
+              rawPrice: 'Consultar',
               img: 'assets/tapes/biocint.jpg',
               note: 'Incluye costo de polímero',
             },
@@ -1679,8 +1679,8 @@
                 attr_2: '1 Color',
                 attr_3: '50 Rollos',
               },
-              price: 270000,
-              rawPrice: '$270.000 + IVA',
+              price: 0,
+              rawPrice: 'Consultar',
               img: 'assets/tapes/biocint.jpg',
               note: 'Incluye costo de polímero',
             },
@@ -1690,8 +1690,8 @@
                 attr_2: '1 Color',
                 attr_3: '100 Rollos',
               },
-              price: 480000,
-              rawPrice: '$480.000 + IVA',
+              price: 0,
+              rawPrice: 'Consultar',
               img: 'assets/tapes/biocint.jpg',
               note: 'Incluye costo de polímero',
             },
@@ -1701,8 +1701,8 @@
                 attr_2: '1 Color',
                 attr_3: '100 Rollos',
               },
-              price: 435000,
-              rawPrice: '$435.000 + IVA',
+              price: 0,
+              rawPrice: 'Consultar',
               img: 'assets/tapes/biocint.jpg',
               note: 'Incluye costo de polímero',
             },
@@ -1712,8 +1712,8 @@
                 attr_2: '2 Colores',
                 attr_3: '50 Rollos',
               },
-              price: 380000,
-              rawPrice: '$380.000 + IVA',
+              price: 0,
+              rawPrice: 'Consultar',
               img: 'assets/cintas-impresas.jpg',
               note: 'Incluye costo de polímero',
             },
@@ -1723,8 +1723,8 @@
                 attr_2: '2 Colores',
                 attr_3: '50 Rollos',
               },
-              price: 350000,
-              rawPrice: '$350.000 + IVA',
+              price: 0,
+              rawPrice: 'Consultar',
               img: 'assets/cintas-impresas.jpg',
               note: 'Incluye costo de polímero',
             },
@@ -1734,8 +1734,8 @@
                 attr_2: '2 Colores',
                 attr_3: '100 Rollos',
               },
-              price: 560000,
-              rawPrice: '$560.000 + IVA',
+              price: 0,
+              rawPrice: 'Consultar',
               img: 'assets/cintas-impresas.jpg',
               note: 'Incluye costo de polímero',
             },
@@ -1745,8 +1745,8 @@
                 attr_2: '2 Colores',
                 attr_3: '100 Rollos',
               },
-              price: 510000,
-              rawPrice: '$510.000 + IVA',
+              price: 0,
+              rawPrice: 'Consultar',
               img: 'assets/cintas-impresas.jpg',
               note: 'Incluye costo de polímero',
             },
@@ -1770,8 +1770,8 @@
                 attr_2: '1 Color',
                 attr_3: '200 Rollos',
               },
-              price: 400000,
-              rawPrice: '$400.000 + IVA',
+              price: 0,
+              rawPrice: 'Consultar',
               img: 'assets/tapes/biocint.jpg',
               note: 'Incluye costo de polímero',
             },
@@ -1781,8 +1781,8 @@
                 attr_2: '1 Color',
                 attr_3: '200 Rollos',
               },
-              price: 340000,
-              rawPrice: '$340.000 + IVA',
+              price: 0,
+              rawPrice: 'Consultar',
               img: 'assets/tapes/biocint.jpg',
               note: 'Incluye costo de polímero',
             },
@@ -1792,8 +1792,8 @@
                 attr_2: '2 Colores',
                 attr_3: '200 Rollos',
               },
-              price: 470000,
-              rawPrice: '$470.000 + IVA',
+              price: 0,
+              rawPrice: 'Consultar',
               img: 'assets/cintas-impresas.jpg',
               note: 'Incluye costo de polímero',
             },
@@ -1803,8 +1803,8 @@
                 attr_2: '2 Colores',
                 attr_3: '200 Rollos',
               },
-              price: 420000,
-              rawPrice: '$420.000 + IVA',
+              price: 0,
+              rawPrice: 'Consultar',
               img: 'assets/cintas-impresas.jpg',
               note: 'Incluye costo de polímero',
             },
@@ -1820,15 +1820,15 @@
           variants: [
             {
               attrs: { attr_3: '24mm x 45m (x96)' },
-              price: 37900,
-              rawPrice: '$37.900 + IVA',
+              price: 0,
+              rawPrice: 'Consultar',
               img: 'assets/tapes/cristal.jpg',
               note: 'Metraje real',
             },
             {
               attrs: { attr_3: '48mm x 100m (x36)' },
-              price: 43200,
-              rawPrice: '$43.200 + IVA',
+              price: 0,
+              rawPrice: 'Consultar',
               img: 'assets/tapes/cristal.jpg',
               note: 'Metraje real',
             },
@@ -2003,7 +2003,7 @@
           const cat = getCol(row, 'categoria', 'comun');
           const name = getCol(row, 'nombre', 'Producto');
           const price = parseFloat(getCol(row, 'precio_num', '0')) || 0;
-          const rawPrice = getCol(row, 'precio_texto', '$0');
+          const rawPrice = getCol(row, 'precio_texto', '') || 'Consultar';
           const img = formatImgUrl(
             getCol(row, 'imagen', 'assets/tapes/biocint.jpg'),
           );
@@ -2068,6 +2068,7 @@
         } catch (e) {}
         if (!(cached && applyCatalogCsv(cached))) renderMarketSkeleton();
 
+        let fresh = false;
         if (SPREADSHEET_CSV_URL) {
           try {
             const cacheBustUrl =
@@ -2079,7 +2080,9 @@
             const res = await fetch(cacheBustUrl, { cache: 'no-store', signal });
             if (res.ok) {
               const text = await res.text();
-              if (text !== renderedCsv && applyCatalogCsv(text)) {
+              if (text === renderedCsv) fresh = true;
+              else if (applyCatalogCsv(text)) {
+                fresh = true;
                 try {
                   localStorage.setItem(CATALOG_CACHE_KEY, text);
                 } catch (e) {}
@@ -2089,7 +2092,14 @@
             console.log('Fondo de reserva activo para catálogo.', e);
           }
         }
-        if (!catalogReady) {
+        if (!fresh) {
+          // Sheet unreachable: backup or cached list, always "Consultar", never a stale price
+          MARKET_ITEMS.forEach((p) =>
+            p.variants.forEach((v) => {
+              v.price = 0;
+              v.rawPrice = 'Consultar';
+            }),
+          );
           catalogReady = true;
           renderMarket(currentCat);
         }
